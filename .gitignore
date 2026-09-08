@@ -1,0 +1,8 @@
+   .env
+   .env.local
+   appsettings.Development.json
+   *.pfx
+   *.key
+   node_modules/
+   bin/
+   obj/
