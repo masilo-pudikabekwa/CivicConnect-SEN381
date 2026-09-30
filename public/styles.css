@@ -1,0 +1,22 @@
+* { box-sizing: border-box; }
+body { margin: 0; font: 15px/1.5 system-ui, sans-serif; color: #1d2733; background: #f4f6f8; }
+header { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; padding: 12px 20px; background: #16395c; color: #fff; }
+header h1 { margin: 0; font-size: 1.3rem; }
+main { max-width: 900px; margin: 0 auto; padding: 16px; }
+section { background: #fff; border: 1px solid #d9dee4; border-radius: 8px; padding: 16px 20px; margin-bottom: 16px; }
+h2 { margin-top: 0; font-size: 1.1rem; }
+label { display: block; margin-bottom: 10px; font-weight: 600; }
+input, select, textarea { display: block; width: 100%; margin-top: 4px; padding: 8px; font: inherit; border: 1px solid #b8c1cc; border-radius: 4px; }
+.row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.row input, .row select { width: auto; flex: 1 1 160px; margin-top: 0; }
+button { padding: 8px 14px; font: inherit; border: 0; border-radius: 4px; background: #1f6fb2; color: #fff; cursor: pointer; }
+button.secondary { background: #5b6b7b; }
+.hint { margin: -4px 0 10px; font-size: 0.85rem; color: #5b6b7b; }
+#message { padding: 10px 14px; border-radius: 6px; background: #e3f1e6; border: 1px solid #9bc9a5; }
+#message.error { background: #fbe7e7; border-color: #e0a0a0; }
+dl { display: grid; grid-template-columns: max-content 1fr; gap: 4px 16px; }
+dt { font-weight: 600; }
+.table-wrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; }
+th, td { text-align: left; padding: 6px 8px; border-bottom: 1px solid #e3e7eb; }
+td select { width: auto; display: inline-block; margin: 0; }
