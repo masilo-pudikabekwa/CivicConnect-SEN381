@@ -1,0 +1,77 @@
+// CivicConnect initial persistence baseline (M2).
+// Relational model chosen because users, reports and status history are strongly
+// related and FR-05 status changes need transactional integrity.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  CITIZEN
+  PERSONNEL
+  ADMIN
+}
+
+enum ReportStatus {
+  SUBMITTED
+  UNDER_REVIEW
+  IN_PROGRESS
+  RESOLVED
+}
+
+enum Category {
+  ROADS
+  WATER
+  ELECTRICITY
+  WASTE
+  SAFETY
+  OTHER
+}
+
+model User {
+  id           Int            @id @default(autoincrement())
+  email        String         @unique @db.VarChar(254)
+  passwordHash String
+  role         Role           @default(CITIZEN)
+  isActive     Boolean        @default(true)
+  createdAt    DateTime       @default(now())
+  reports      Report[]
+  changes      StatusChange[]
+}
+
+model Report {
+  id          Int            @id @default(autoincrement())
+  reference   String         @unique @db.VarChar(20)
+  category    Category
+  description String         @db.VarChar(1000)
+  location    String         @db.VarChar(255)
+  status      ReportStatus   @default(SUBMITTED)
+  reporterId  Int
+  reporter    User           @relation(fields: [reporterId], references: [id])
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+  history     StatusChange[]
+
+  @@index([status])
+  @@index([category])
+  @@index([createdAt])
+}
+
+// Append-only audit trail of every status transition (FR-05 accountability).
+model StatusChange {
+  id          Int          @id @default(autoincrement())
+  reportId    Int
+  report      Report       @relation(fields: [reportId], references: [id])
+  fromStatus  ReportStatus
+  toStatus    ReportStatus
+  changedById Int
+  changedBy   User         @relation(fields: [changedById], references: [id])
+  changedAt   DateTime     @default(now())
+
+  @@index([reportId])
+}
