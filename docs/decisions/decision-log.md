@@ -9,12 +9,12 @@ Rule: Only genuine decisions already made are recorded as "Decided." Where evide
 | ED-001 | Branch protection and PR review model for main branch | Decided | 2026-09-08 |
 | ED-002 | Technology stack selection | Closed / Replaced by ADR-TECH-01 | 2026-09-09 |
 | ED-003 | Detailed privacy/access-control model | Deferred to Milestone 2 | 2026-09-09 |
-| ADR-ARCH-01 | SPA + modular monolith API | Proposed | 2026-09-30 |
-| ADR-TECH-01 | React/TypeScript + Node/Express + PostgreSQL | Proposed | 2026-09-30 |
-| ADR-DEPLOY-01 | Provider-neutral PaaS deployment direction | Proposed | 2026-09-30 |
-| ADR-DESIGN-01 | Adopt Strategy and Observer Patterns | Proposed | 2026-09-30 |
-| ADR-PERSISTENCE-01 | Application-layer Transactions and Optimistic Concurrency | Proposed | 2026-09-30 |
-| ADR-INTEGRATION-01 | Asynchronous Dispatch for Notifications | Proposed | 2026-09-30 |
+| ADR-ARCH-01 | SPA + modular monolith API | Decided | 2026-09-30 |
+| ADR-TECH-01 | React/TypeScript + Node/Express + PostgreSQL | Decided | 2026-09-30 |
+| ADR-DEPLOY-01 | Provider-neutral PaaS deployment direction | Decided | 2026-09-30 |
+| ADR-DESIGN-01 | Adopt Strategy and Observer Patterns | Decided | 2026-09-30 |
+| ADR-PERSISTENCE-01 | Application-layer Transactions and Optimistic Concurrency | Decided | 2026-09-30 |
+| ADR-INTEGRATION-01 | Asynchronous Dispatch for Notifications | Decided | 2026-09-30 |
 
 ## ED-001: Branch protection and PR review model for main branch
 | Field | Detail |
