@@ -1,8 +1,15 @@
+# Secrets / local config (never commit - R-007, FE-06)
 .env
+.env.*
+!.env.example
 .env.local
 appsettings.Development.json
 *.pfx
 *.key
+
+# Dependencies and build output
 node_modules/
 bin/
 obj/
+coverage/
+*.log
