@@ -7,8 +7,14 @@ Rule: Only genuine decisions already made are recorded as "Decided." Where evide
 | Engineering Decision ID | Title | Status | Date |
 |---|---|---|---|
 | ED-001 | Branch protection and PR review model for main branch | Decided | 2026-09-08 |
-| ED-002 | Technology stack selection | Deferred to Milestone 2 | 2026-09-09 |
+| ED-002 | Technology stack selection | Closed / Replaced by ADR-TECH-01 | 2026-09-09 |
 | ED-003 | Detailed privacy/access-control model | Deferred to Milestone 2 | 2026-09-09 |
+| ADR-ARCH-01 | SPA + modular monolith API | Proposed | 2026-09-30 |
+| ADR-TECH-01 | React/TypeScript + Node/Express + PostgreSQL | Proposed | 2026-09-30 |
+| ADR-DEPLOY-01 | Provider-neutral PaaS deployment direction | Proposed | 2026-09-30 |
+| ADR-DESIGN-01 | Adopt Strategy and Observer Patterns | Proposed | 2026-09-30 |
+| ADR-PERSISTENCE-01 | Application-layer Transactions and Optimistic Concurrency | Proposed | 2026-09-30 |
+| ADR-INTEGRATION-01 | Asynchronous Dispatch for Notifications | Proposed | 2026-09-30 |
 
 ## ED-001: Branch protection and PR review model for main branch
 | Field | Detail |
@@ -29,7 +35,7 @@ Rule: Only genuine decisions already made are recorded as "Decided." Where evide
 | Context | CivicConnect will need a confirmed technology stack. |
 | Constraints | Stack choice must be justified against baselined requirements/NFRs (Driston's FR-01 to FR-10, NFR-01 to NFR-06), which are now drafted but not yet formally baselined/signed off. |
 | Alternatives | Formally defer to M2 with documented rationale. |
-| Decision | Deferred to Milestone 2. |
+| Decision | **Closed / Replaced by ADR-TECH-01** |
 | Rationale | Master Project Brief (M1 boundaries) explicitly excludes final technology-stack selection from M1's required outputs. Deciding now would risk constraining architecture before the requirements baseline is signed off — the exact premature-decision risk the milestone gate exists to prevent. |
 | Trade-offs | M2 will need dedicated time for a weighted decision matrix / ADR against the now-confirmed NFRs (e.g. NFR-01 performance, NFR-04 availability, NFR-06 scalability). |
 | Risks | Left too late, it compresses the M2 timeline. |
