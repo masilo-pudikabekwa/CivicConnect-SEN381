@@ -25,7 +25,7 @@ Rule: Only genuine decisions already made are recorded as "Decided." Where evide
 | Decision | Adopted protected main, min 2 approvals excluding the author, bypass disabled. |
 | Rationale | Directly satisfies the Master Brief's 2 reviewer control requirement; removes any single-person unreviewed merge path; produces auditable pull request history as required governance evidence, consistent with high-performance code review practices (Forsgren, et al., 2018). |
 | Trade-offs | Slower merge velocity on a 3-person team every PR blocks on both other members reviewing. Governance files (.gitignore, PR template) had to go through this same flow, which is itself the team's first evidence of the review workflow. |
-| Risks | Reviewer availability becomes a bottleneck if a teammate is unreachable near a deadline(R-011) |
+| Risks | Reviewer availability becomes a bottleneck if a teammate is unreachable near a deadline(R-013) |
 | Evidence | Repo Settings → Branches ruleset screenshot; first merged PR showing 2 approvals. |
 | Later consequence | Every substantive change in docs, config, and eventually application code all routes through this same pull request + 2-person review flow for the rest of the project. This affects M2–M4 velocity planning. |
 
@@ -38,16 +38,16 @@ Rule: Only genuine decisions already made are recorded as "Decided." Where evide
 | Decision | **Closed / Replaced by ADR-TECH-01** |
 | Rationale | Master Project Brief (M1 boundaries) explicitly excludes final technology-stack selection from M1's required outputs. Deciding now would risk constraining architecture before the requirements baseline is signed off — the exact premature-decision risk the milestone gate exists to prevent. |
 | Trade-offs | M2 will need dedicated time for a weighted decision matrix / ADR against the now-confirmed NFRs (e.g. NFR-01 performance, NFR-04 availability, NFR-06 scalability). |
-| Risks | Left too late, it compresses the M2 timeline. |
+| Risks | Superseded by ADR-TECH-01, see CR-001 |
 | Evidence | |
 | Later consequence | Requires a formal ADR at M2 (architecture/technology/persistence/integration choices need the full ADR treatment). |
 
 ## ED-003: Detailed privacy/access-control model
 | Field | Detail |
 |---|---|
-| Context | |
-| Constraints | |
-| Alternatives | |
+| Context | The data contains PII and location data. |
+| Constraints | The fixed go-live date and POPIA |
+| Alternatives | Coarse RBAC now vs a full classification model now |
 | Decision | Deferred to Milestone 2. |
 | Rationale | Committing to a detailed access model before data classification is confirmed risks the same premature-decision problem as ED-002, and falls outside M1's boundary on detailed security implementation. |
 | Trade-offs | FE-01 (Security and Privacy) stays partially open until this is resolved. NFR-03 alone is not sufficient to demonstrate the access control claims an assessor may probe. |
@@ -64,7 +64,7 @@ Rule: Only genuine decisions already made are recorded as "Decided." Where evide
 | Decision | Select a React SPA plus one modular Node/Express API and one PostgreSQL database. |
 | Rationale | The selected option gives clear module boundaries and a testable HTTP interface without the operational cost and extra failure modes of microservices. It fits the pilot scale and team capability while leaving room to extract a module later if evidence later justifies it. |
 | Trade-offs | Two build targets and an API contract must be maintained. The backend and database remain shared runtime dependencies. |
-| Risks |  |
+| Risks | Boundary erosion (R-015), DB SPOF (R-016) |
 | Evidence |  |
 | Later consequence | Repository structure must reflect module boundaries. New service extraction requires a later ADR and evidence. Diagrams/RTM use these boundaries. |
 
@@ -78,7 +78,7 @@ Rule: Only genuine decisions already made are recorded as "Decided." Where evide
 | Rationale | The hybrid keeps the familiar backend runtime/framework, reducing schedule risk, while PostgreSQL supplies relational constraints/transactions that fit users, roles, reports and workflow state. All major components are mainstream, open-source and deployable on common managed platforms. |
 | Trade-offs | The team must learn PostgreSQL/Prisma conventions and cannot rely on MongoDB patterns. Exact dependency versions require lockfile maintenance and security updates. |
 | Risks | PostgreSQL/Prisma is new to the team (R-003). |
-| Evidence |  |
+| Evidence | A comparison matrix, which ED-002 promised and is missing. It must cover the three stacks against NFRs, team experience, cost and deployment. Add authoritative version sources (Node release page, Prisma docs), not AI claims |
 | Later consequence | README, package files, migrations and deployment configuration must use this stack. Any major stack replacement after baseline requires controlled change. |
 
 ## ADR-DEPLOY-01: Provider-neutral PaaS deployment direction
@@ -91,7 +91,7 @@ Rule: Only genuine decisions already made are recorded as "Decided." Where evide
 | Rationale | This demonstrates deployability without hard-wiring business code to one cloud provider. It supports the cost constraint and keeps the deployment decision reversible. |
 | Trade-offs | Some provider-specific configuration will still exist at deployment time. Free-tier limits and backup/availability guarantees must be checked when the team actually chooses the service. |
 | Risks | Free-tier limits and backup guarantees must be checked when selecting the service. |
-| Evidence |  |
+| Evidence | Free-tier limits and backup guarantees, checked against the real provider pages |
 | Later consequence | Use environment-based configuration, no secrets in repository, and record vendor selection as a later decision if it materially affects cost/availability. |
 
 ## ADR-DESIGN-01: Adopt Strategy and Observer Patterns
@@ -117,7 +117,7 @@ Rule: Only genuine decisions already made are recorded as "Decided." Where evide
 | Rationale | This matches the team's Node.js/Express expertise, satisfies NFR-06 pilot-scale (low contention) metrics, and keeps business logic testable within the application. |
 | Trade-offs | Second writers will fail fast during conflicts and must retry. |
 | Risks | Conflicting writes. |
-| Evidence |  |
+| Evidence | report.repository.prisma.js#updateStatus, StatusChange table, the test reference |
 | Later consequence | Inform the persistence/technology-stack ADR (feeding ED-002) and RTM. |
 
 ## ADR-INTEGRATION-01: Asynchronous Dispatch for Notifications
@@ -128,7 +128,7 @@ Rule: Only genuine decisions already made are recorded as "Decided." Where evide
 | Alternatives | Synchronous call in the request path; Asynchronous, decoupled dispatch. |
 | Decision | Implement asynchronous, decoupled dispatch for the email status-change notification. |
 | Rationale | A synchronous call couples core application performance (NFR-01) to third-party availability. Asynchronous dispatch keeps these concerns separate while comfortably satisfying the 5-minute delivery window outlined in FR-10. |
-| Trade-offs |  |
+| Trade-offs | A notification can be delayed or lost if the process dies |
 | Risks | Future dependency on a third-party notification channel (R-008). |
-| Evidence |  |
+| Evidence | A2 Task 3, and "not yet implemented" |
 | Later consequence | Informs notification-integration ADR and R-008. |
