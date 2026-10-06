@@ -1,4 +1,13 @@
-// apps/api/src/modules/auth/auth.routes.ts
+/**
+ * ==============================================================================
+ * Authentication HTTP Route Declarations
+ *
+ * Traceability:
+ *   - FR-07: Public registration and login routes
+ *   - FR-08: Session identity check endpoint
+ * ==============================================================================
+ */
+
 import { Router } from "express";
 import { authController } from "./auth.controller.js";
 import { authenticate } from "../../middleware/auth.js";

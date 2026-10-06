@@ -1,3 +1,13 @@
+// ==============================================================================
+// CivicConnect Data Baseline Schema (PostgreSQL 18.x via Prisma ORM)
+//
+// Traceability:
+//   - ADR-TECH-01: Relational persistence chosen over MongoDB for data integrity
+//   - ASR-02 / FE-03: Strict relational constraints for users, reports, and status
+//   - FR-01, FR-02: Structured issue reports tied to citizen identity
+//   - FR-05: Audit trail recording every status change with timestamps
+// ==============================================================================
+
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
@@ -7,12 +17,14 @@ generator client {
   provider = "prisma-client-js"
 }
 
+// User roles enforcing Role-Based Access Control (FR-08)
 enum Role {
   CITIZEN
   PERSONNEL
   ADMIN
 }
 
+// Fixed lifecycle states for civic reports (FR-04, FR-05)
 enum ReportStatus {
   SUBMITTED
   UNDER_REVIEW
@@ -20,13 +32,14 @@ enum ReportStatus {
   RESOLVED
 }
 
+// User account entity storing credentials as salted hashes (NFR-03)
 model User {
   id            String          @id @default(uuid())
   email         String          @unique
-  passwordHash  String
+  passwordHash  String          // Salted hash (Argon2id/bcrypt), never plaintext (NFR-03)
   name          String?
   role          Role            @default(CITIZEN)
-  isActive      Boolean         @default(true)
+  isActive      Boolean         @default(true) // Supports account deactivation (FR-09)
   createdAt     DateTime        @default(now())
   updatedAt     DateTime        @updatedAt
   reports       Report[]        @relation("CitizenReports")
@@ -35,12 +48,13 @@ model User {
   @@map("users")
 }
 
+// Core civic issue report entity (FR-01, FR-02, FR-03)
 model Report {
   id            String          @id @default(uuid())
-  reference     String          @unique
-  category      String
-  description   String
-  location      String
+  reference     String          @unique // Unique citizen tracking reference (FR-03)
+  category      String          // Issue classification (e.g. ROADS, WATER, ELECTRICITY)
+  description   String          // Validated minimum description (FR-02)
+  location      String          // Physical address or landmark description (FR-02)
   status        ReportStatus    @default(SUBMITTED)
   citizenId     String
   citizen       User            @relation("CitizenReports", fields: [citizenId], references: [id])
@@ -48,12 +62,14 @@ model Report {
   updatedAt     DateTime        @updatedAt
   statusHistory StatusHistory[]
 
+  // Indexes placed on primary query paths to satisfy NFR-06 (pilot scalability)
   @@index([status])
   @@index([category])
   @@index([citizenId])
   @@map("reports")
 }
 
+// Append-only audit log for status transitions (FR-05 accountability & transparency)
 model StatusHistory {
   id          String       @id @default(uuid())
   reportId    String

@@ -1,3 +1,15 @@
+/**
+ * ==============================================================================
+ * Citizen Issue Report Form Component
+ *
+ * Traceability:
+ *   - FR-01: Citizen submits a civic issue report
+ *   - FR-02: Enforces minimum structured fields (category, location, description)
+ *   - FR-03: Displays immediate on-screen confirmation with unique reference number
+ *   - NFR-02: Simple 3-step submission flow unaided (Usability Driver)
+ * ==============================================================================
+ */
+
 import React, { useState } from "react";
 import { apiRequest } from "../../shared/api/client";
 
@@ -16,6 +28,7 @@ export function ReportForm() {
     setLoading(true);
 
     try {
+      // Calls POST /api/v1/reports
       const res = await apiRequest<{ reference: string }>("/reports", {
         method: "POST",
         body: JSON.stringify({ category, location, description })
@@ -36,41 +49,41 @@ export function ReportForm() {
       {reference && (
         <div className="alert success">
           <strong>Submission Accepted! (FR-03)</strong>
-          <p>Unique Reference: <code>{reference}</code></p>
+          <p>Unique Tracking Reference: <code>{reference}</code></p>
         </div>
       )}
       {error && <div className="alert error">{error}</div>}
 
       <form onSubmit={handleSubmit}>
         <div className="form-group">
-          <label>Category</label>
+          <label>Category (FR-02)</label>
           <select value={category} onChange={(e) => setCategory(e.target.value)}>
             <option value="ROADS">Roads & Potholes</option>
             <option value="WATER">Water & Sanitation</option>
-            <option value="ELECTRICITY">Electricity & Outages</option>
-            <option value="WASTE">Waste Collection</option>
+            <option value="ELECTRICITY">Electricity & Lighting</option>
+            <option value="WASTE">Waste Management</option>
             <option value="PARKS">Parks & Infrastructure</option>
-            <option value="OTHER">Other Issue</option>
+            <option value="OTHER">Other Issues</option>
           </select>
         </div>
 
         <div className="form-group">
-          <label>Location</label>
+          <label>Location (FR-02)</label>
           <input
             type="text"
             required
-            placeholder="e.g. Cnr Main St & 3rd Ave"
+            placeholder="e.g. Corner of 5th Ave and Main St"
             value={location}
             onChange={(e) => setLocation(e.target.value)}
           />
         </div>
 
         <div className="form-group">
-          <label>Description</label>
+          <label>Description (FR-02)</label>
           <textarea
             required
             rows={4}
-            placeholder="Detailed description of the issue..."
+            placeholder="Provide sufficient details for civic personnel to action..."
             value={description}
             onChange={(e) => setDescription(e.target.value)}
           />

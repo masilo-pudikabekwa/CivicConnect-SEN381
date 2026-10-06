@@ -1,21 +1,42 @@
+/**
+ * ==============================================================================
+ * Citizen Report Status Lookup Component
+ *
+ * Traceability:
+ *   - FR-04: Citizen queries status and last-updated timestamp by reference
+ *   - NFR-02: Fast, single-input feedback for citizens
+ * ==============================================================================
+ */
+
 import React, { useState } from "react";
 import { apiRequest } from "../../shared/api/client";
 
+interface ReportDetail {
+  reference: string;
+  category: string;
+  description: string;
+  location: string;
+  status: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export function StatusLookup() {
   const [refInput, setRefInput] = useState("");
-  const [report, setReport] = useState<any>(null);
+  const [report, setReport] = useState<ReportDetail | null>(null);
   const [error, setError] = useState<string | null>(null);
 
+  // Queries GET /api/v1/reports/:reference (FR-04)
   const handleLookup = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
     setReport(null);
 
     try {
-      const data = await apiRequest<any>(`/reports/${refInput.trim()}`);
+      const data = await apiRequest<ReportDetail>(`/reports/${refInput.trim()}`);
       setReport(data);
     } catch (err: any) {
-      setError(err.message);
+      setError(err.message || "Could not retrieve report");
     }
   };
 

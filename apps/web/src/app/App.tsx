@@ -1,4 +1,13 @@
-// apps/web/src/app/App.tsx
+/**
+ * ==============================================================================
+ * Main Application Shell & Role-Aware Navigation
+ *
+ * Traceability:
+ *   - FR-08: Renders navigation options tailored to user role (Citizen vs. Personnel)
+ *   - ASR-06: Clean user experience separating citizen reporting from staff dashboard
+ * ==============================================================================
+ */
+
 import { useState, useEffect } from "react";
 import { ReportForm } from "../features/reports/ReportForm";
 import { StatusLookup } from "../features/reports/StatusLookup";
@@ -11,6 +20,7 @@ export function App() {
   const [user, setUser] = useState<any>(null);
   const [tab, setTab] = useState<"submit" | "track" | "staff">("submit");
 
+  // Restore session from token on initial page load
   useEffect(() => {
     const token = localStorage.getItem("token");
     if (token) {
@@ -20,17 +30,24 @@ export function App() {
     }
   }, []);
 
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    setUser(null);
+  };
+
   return (
     <div className="container">
       <header className="header">
         <h2>CivicConnect Portal</h2>
-        {user && (
+        {user ? (
           <div>
             <span>{user.email} (<strong>{user.role}</strong>)</span>
-            <button className="link-btn" style={{ marginLeft: "12px" }} onClick={() => { localStorage.removeItem("token"); setUser(null); }}>
+            <button className="link-btn" style={{ marginLeft: "12px" }} onClick={handleLogout}>
               Log out
             </button>
           </div>
+        ) : (
+          <span>Welcome, please sign in</span>
         )}
       </header>
 
@@ -38,11 +55,18 @@ export function App() {
         <AuthPage onLogin={(u) => setUser(u)} />
       ) : (
         <>
+          {/* Navigation tabs conditioned on user authentication and role (FR-08) */}
           <nav className="nav-tabs">
-            <button className={tab === "submit" ? "active" : ""} onClick={() => setTab("submit")}>Report Issue</button>
-            <button className={tab === "track" ? "active" : ""} onClick={() => setTab("track")}>Track Status</button>
+            <button className={tab === "submit" ? "active" : ""} onClick={() => setTab("submit")}>
+              Report Issue
+            </button>
+            <button className={tab === "track" ? "active" : ""} onClick={() => setTab("track")}>
+              Track Status
+            </button>
             {(user.role === "PERSONNEL" || user.role === "ADMIN") && (
-              <button className={tab === "staff" ? "active" : ""} onClick={() => setTab("staff")}>Personnel Dashboard</button>
+              <button className={tab === "staff" ? "active" : ""} onClick={() => setTab("staff")}>
+                Personnel Dashboard
+              </button>
             )}
           </nav>
 

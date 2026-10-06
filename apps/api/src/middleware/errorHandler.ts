@@ -1,7 +1,23 @@
+/**
+ * ==============================================================================
+ * Centralized HTTP Error Handling Middleware
+ *
+ * Traceability:
+ *   - ASR-02 / FE-03: Uniform error structure prevents internal details leaking
+ *   - NFR-05: Maps Zod validation failures to a standard 400 Bad Request
+ *
+ * Design Intent:
+ *   Intercepts all thrown exceptions and maps them to a predictable client shape:
+ *   { error: { code: string, message: string, details?: any } }
+ *   Ensures stack traces are suppressed in production.
+ * ==============================================================================
+ */
+
 import { Request, Response, NextFunction } from "express";
 import { ZodError } from "zod";
 
 export function errorHandler(err: unknown, _req: Request, res: Response, _next: NextFunction) {
+  // Handle request validation errors from Zod schemas (NFR-05)
   if (err instanceof ZodError) {
     res.status(400).json({
       error: {
@@ -13,15 +29,18 @@ export function errorHandler(err: unknown, _req: Request, res: Response, _next: 
     return;
   }
 
+  // Handle known domain and business rule errors
   if (err instanceof Error) {
     if (err.message.includes("not found")) {
       res.status(404).json({ error: { code: "NOT_FOUND", message: err.message } });
       return;
     }
+    // Rejected lifecycle transition (FR-05)
     if (err.message.includes("Invalid status transition")) {
       res.status(422).json({ error: { code: "INVALID_TRANSITION", message: err.message } });
       return;
     }
+    // Access control or ownership check failed (FR-08)
     if (err.message.includes("Forbidden") || err.message.includes("Unauthorized")) {
       res.status(403).json({ error: { code: "FORBIDDEN", message: err.message } });
       return;
@@ -32,11 +51,12 @@ export function errorHandler(err: unknown, _req: Request, res: Response, _next: 
     }
   }
 
+  // Fallback for unexpected internal errors
   console.error("Unhandled internal server error:", err);
   res.status(500).json({
     error: {
       code: "INTERNAL_SERVER_ERROR",
-      message: "An internal server error occurred"
+      message: "An unexpected internal server error occurred"
     }
   });
 }

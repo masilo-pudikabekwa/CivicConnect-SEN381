@@ -1,3 +1,14 @@
+/**
+ * ==============================================================================
+ * Civic Personnel Management Dashboard Component
+ *
+ * Traceability:
+ *   - FR-05: Performs valid status transitions (Review -> In Progress -> Resolve)
+ *   - FR-06: Filters and sorts reports by status for personnel review
+ *   - FR-08: Restricted to users with PERSONNEL or ADMIN roles
+ * ==============================================================================
+ */
+
 import { useEffect, useState } from "react";
 import { apiRequest } from "../../shared/api/client";
 
@@ -6,6 +17,7 @@ export function StaffDashboard() {
   const [statusFilter, setStatusFilter] = useState("");
   const [error, setError] = useState<string | null>(null);
 
+  // Queries GET /api/v1/reports with optional status query parameter (FR-06)
   const loadReports = async () => {
     try {
       const q = statusFilter ? `?status=${statusFilter}` : "";
@@ -20,15 +32,16 @@ export function StaffDashboard() {
     loadReports();
   }, [statusFilter]);
 
+  // Triggers PATCH /api/v1/reports/:reference/status (FR-05)
   const advanceStatus = async (reference: string, nextStatus: string) => {
     try {
       await apiRequest(`/reports/${reference}/status`, {
         method: "PATCH",
         body: JSON.stringify({ status: nextStatus })
       });
-      loadReports();
+      loadReports(); // Refresh view upon successful state change
     } catch (err: any) {
-      alert(`Transition rejected: ${err.message}`);
+      alert(`Transition rejected by state machine: ${err.message}`);
     }
   };
 
@@ -38,7 +51,7 @@ export function StaffDashboard() {
       {error && <div className="alert error">{error}</div>}
 
       <div style={{ marginBottom: "16px" }}>
-        <label>Filter Status: </label>
+        <label>Filter by Status: </label>
         <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
           <option value="">All Reports</option>
           <option value="SUBMITTED">SUBMITTED</option>
@@ -55,7 +68,7 @@ export function StaffDashboard() {
             <th>Category</th>
             <th>Location</th>
             <th>Status</th>
-            <th>Transition Action</th>
+            <th>Allowed Transitions (FR-05)</th>
           </tr>
         </thead>
         <tbody>

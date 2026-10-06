@@ -1,3 +1,15 @@
+/**
+ * ==============================================================================
+ * Authentication & Role-Based Access Control (RBAC) Middleware
+ *
+ * Traceability:
+ *   - FR-07: User authentication before accessing protected workflows
+ *   - FR-08: Role-based authorization (CITIZEN, PERSONNEL, ADMIN)
+ *   - FR-09: Re-queries user state from DB so role changes take immediate effect
+ *   - ASR-01: Backend-enforced authorization; client tokens are never blindly trusted
+ * ==============================================================================
+ */
+
 import { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
 import { env } from "../config/env.js";
@@ -17,6 +29,9 @@ declare global {
   }
 }
 
+/**
+ * Validates the JWT bearer token and attaches the authenticated user to the request.
+ */
 export async function authenticate(req: Request, res: Response, next: NextFunction) {
   const authHeader = req.headers.authorization;
   if (!authHeader?.startsWith("Bearer ")) {
@@ -28,14 +43,14 @@ export async function authenticate(req: Request, res: Response, next: NextFuncti
   try {
     const payload = jwt.verify(token, env.AUTH_SECRET) as { sub: string };
 
-    // Satisfies FR-09: Role/account state re-queried on every authenticated request
+    // Critical for FR-09: Query live user record so role or deactivation takes effect immediately
     const user = await prisma.user.findUnique({
       where: { id: payload.sub },
       select: { id: true, email: true, role: true, isActive: true }
     });
 
     if (!user || !user.isActive) {
-      res.status(401).json({ error: { code: "UNAUTHORIZED", message: "Account inactive or missing" } });
+      res.status(401).json({ error: { code: "UNAUTHORIZED", message: "Account inactive or no longer exists" } });
       return;
     }
 
@@ -46,10 +61,13 @@ export async function authenticate(req: Request, res: Response, next: NextFuncti
   }
 }
 
+/**
+ * Guards routes by checking if the authenticated user possesses one of the required roles (FR-08).
+ */
 export function requireRole(...roles: Array<"CITIZEN" | "PERSONNEL" | "ADMIN">) {
   return (req: Request, res: Response, next: NextFunction) => {
     if (!req.user || !roles.includes(req.user.role)) {
-      res.status(403).json({ error: { code: "FORBIDDEN", message: "Access denied for current user role" } });
+      res.status(403).json({ error: { code: "FORBIDDEN", message: "Insufficient permissions for this action" } });
       return;
     }
     next();
