@@ -62,8 +62,17 @@ export const reportController = {
    */
   async getByReference(req: Request, res: Response, next: NextFunction) {
     try {
+      const reference = req.params.reference;
+
+      if (typeof reference !== "string" || reference.trim().length === 0) {
+        res.status(400).json({
+          message: "A valid report reference is required."
+        });
+        return;
+      }
+
       const report = await reportService.getByReference(
-        req.params.reference,
+        reference,
         req.user!.id,
         req.user!.role
       );
@@ -94,15 +103,27 @@ export const reportController = {
    * Handles PATCH /api/v1/reports/:reference/status
    * Executes a validated state transition with audit logging (FR-05).
    */
+  
   async updateStatus(req: Request, res: Response, next: NextFunction) {
     try {
+      const reference = req.params.reference;
+
+      if (typeof reference !== "string" || reference.trim().length === 0) {
+        res.status(400).json({
+          message: "A valid report reference is required."
+        });
+        return;
+      }
+
       const { status, comment } = updateStatusSchema.parse(req.body);
+
       const updated = await reportService.updateStatus(
-        req.params.reference,
+        reference,
         status,
         req.user!.id,
         comment
       );
+
       res.status(200).json({ data: updated });
     } catch (err) {
       next(err);

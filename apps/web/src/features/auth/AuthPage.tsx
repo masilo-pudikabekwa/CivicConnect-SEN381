@@ -10,9 +10,10 @@
 
 import React, { useState } from "react";
 import { apiRequest } from "../../shared/api/client";
+import type { User } from "../../shared/types/user";
 
 interface AuthProps {
-  onLogin: (user: any) => void;
+  onLogin: (user: User) => void;
 }
 
 export function AuthPage({ onLogin }: AuthProps) {
@@ -28,7 +29,7 @@ export function AuthPage({ onLogin }: AuthProps) {
     try {
       if (isLogin) {
         // Authenticate existing account (POST /api/v1/auth/login)
-        const res = await apiRequest<{ token: string; user: any }>("/auth/login", {
+        const res = await apiRequest<{ token: string; user: User }>("/auth/login", {
           method: "POST",
           body: JSON.stringify({ email, password })
         });

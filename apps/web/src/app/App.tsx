@@ -1,31 +1,21 @@
-/**
- * ==============================================================================
- * Main Application Shell & Role-Aware Navigation
- *
- * Traceability:
- *   - FR-08: Renders navigation options tailored to user role (Citizen vs. Personnel)
- *   - ASR-06: Clean user experience separating citizen reporting from staff dashboard
- * ==============================================================================
- */
-
 import { useState, useEffect } from "react";
 import { ReportForm } from "../features/reports/ReportForm";
 import { StatusLookup } from "../features/reports/StatusLookup";
 import { StaffDashboard } from "../features/workflow/StaffDashboard";
 import { AuthPage } from "../features/auth/AuthPage";
 import { apiRequest } from "../shared/api/client";
+import type { User } from "../shared/types/user";
 import "./App.css";
 
 export function App() {
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<User | null>(null);
   const [tab, setTab] = useState<"submit" | "track" | "staff">("submit");
 
-  // Restore session from token on initial page load
   useEffect(() => {
     const token = localStorage.getItem("token");
     if (token) {
-      apiRequest<any>("/auth/me")
-        .then((u) => setUser(u))
+      apiRequest<User>("/auth/me")
+        .then((currentUser: User) => setUser(currentUser))
         .catch(() => localStorage.removeItem("token"));
     }
   }, []);
@@ -52,10 +42,9 @@ export function App() {
       </header>
 
       {!user ? (
-        <AuthPage onLogin={(u) => setUser(u)} />
+        <AuthPage onLogin={(loggedInUser: User) => setUser(loggedInUser)} />
       ) : (
         <>
-          {/* Navigation tabs conditioned on user authentication and role (FR-08) */}
           <nav className="nav-tabs">
             <button className={tab === "submit" ? "active" : ""} onClick={() => setTab("submit")}>
               Report Issue
