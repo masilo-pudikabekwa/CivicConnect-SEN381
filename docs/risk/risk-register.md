@@ -36,3 +36,14 @@ Probability and impact are rated Low, Medium, or High. Priority is derived from 
 ## Highest Priority Risk
 **R-012: Unsupported or immeasurable quality/NFR claims at the M1 defense** 
 This is the only critical entry because it is one the one risk that impacts 3 separate rubric lines simultaneously (Requirements and Acceptance Criteria, PED Quality, and the individual engineering defense). It is also actively live. Every Non-Functional Requirement (NFR) baselined without a measurable acceptance criterion carries this risk forward. It is fully within the team's control to close before sign-off, which is why the mitigation is to "reject the NFR and do not baseline it" rather than a softer control.
+---
+
+## Milestone 2 Risk Evolution & New Risk Proposals (PED v2.0 Section 10.1)
+
+| Risk ID | Description | Probability | Impact | Priority | Status | Mitigation Strategy | Contingency Action | Owner |
+|---|---|---|---|---|---|---|---|---|
+| **R-003** *(Updated)* | Technology learning risk: Node/Express is familiar, but PostgreSQL/Prisma ORM is new to some team members. | Medium | Medium | Medium | **Open** | Small schema/migration spike; peer review with implementation lead; documented migration commands. | Fall back to direct node-postgres query library only through an approved ADR. | Dristen Venter |
+| **R-005** *(Closed)* | M2 technology stack selection made without sufficient evidence. | Low | Medium | Low | **Closed** | Replaced by **ADR-TECH-01** (Node.js + PostgreSQL + Prisma selected via weighted matrix). | Reopen only if spike reveals fundamental runtime incompatibility. | Dristen Venter |
+| **R-015** *(New)* | Architectural boundary erosion inside the modular monolith (cross-module direct table access). | Medium | Medium | Medium | **Open** | Enforce domain encapsulation: modules strictly own their services; ban direct cross-module imports by review. | Refactor before adding new features if services start querying external module tables directly. | Phenyo Phooko |
+| **R-016** *(New)* | PostgreSQL database becomes a critical Single Point of Failure (SPOF). | Medium | High | High | **Open** | Use managed PostgreSQL provider with automated backups, connection health checks, and documented restore assumptions. | If uptime fails NFR-04, transition to provider multi-AZ high availability plan via controlled change. | Team (Shared) |
+| **R-017** *(New)* | Dependency drift and unsupported runtime environments. | Medium | Medium | Medium | **Open** | Baseline Node.js LTS; lock exact dependency versions in `package-lock.json`; avoid release candidate packages in assessed baseline. | Freeze to known-good supported LTS versions. | Masilo Pudikabekwa |
