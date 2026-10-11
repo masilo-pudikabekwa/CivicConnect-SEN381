@@ -1,18 +1,18 @@
-<!-- rtm.md -->
-# Requirements Traceability Matrix (RTM)
+# Requirements Traceability Matrix (RTM) — Milestone 2 Baseline
+> Evolved from M1 Requirements Baseline to trace Architecture, Data, Technology, Design, and Implementation Evidence (PED v2.0 Section 8).
 
-| Source (Stakeholder / Need) | Requirement ID | Priority | Acceptance Criteria (summary) | Future evidence (M2+) |
-|---|---|---|---|---|
-| S01 Citizens / N01 | FR-01 | Must | Confirmed submission with reference number | Design: wireframe; Test: TC-01 |
-| S02 Civic Personnel / N03 | FR-02 | Must | Required fields enforced, missing fields flagged | Design: form schema; Test: TC-02 |
-| S01 Citizens / N02 | FR-03 | Must | On-screen confirmation <=2s | Test: TC-03 (performance) |
-| S01 Citizens / N02 | FR-04 | Must | Status + last-updated date retrievable | Design: status API; Test: TC-04 |
-| S02 Civic Personnel / N04 | FR-05 | Must | Valid transitions only, timestamped | Design: state machine; Test: TC-05 |
-| S02 Civic Personnel / N04 | FR-06 | Should | Filter/sort within 3s | Test: TC-06 |
-| S01/S04 / N01, N06 | FR-07 | Must | Registration & login behave as specified | Design: auth flow; Test: TC-07 |
-| S04 Administrators / N06 | FR-08 | Must | Non-authorised roles denied access | Test: TC-08 (access control) |
-| S04 Administrators / N06 | FR-09 | Should | Role/status change takes effect next request | Test: TC-09 |
-| S01 Citizens / N02 | FR-10 | Could | Email sent within 5 minutes of status change | Test: TC-10 |
-| Quality constraint | NFR-01 to NFR-06 | Must | See Section 2 acceptance criteria | Test: load/usability/security test plans |
-
-**End-to-end trace example (for the defence):** S01 (Citizens),  N01 (submit a civic issue through a clear process) , IN-01 (Person 1's in-scope reporting capability) , FR-01 (this section) , acceptance criteria
+| Req ID | Priority | Architecture / Component | Data & Persistence Impact | Technology & Design Pattern | Implementation Evidence | Verification Evidence | Status (M2) |
+|---|---|---|---|---|---|---|---|
+| **FR-01** | Must | Reporting Module (`apps/api/src/modules/reports`) | Creates `Report` row linked to `User` via `citizenId` | Express 5, React Form, Prisma ORM | `report.service.ts` (`submitReport`), `ReportForm.tsx` | End-to-end form submission | **Implemented** |
+| **FR-02** | Must | Reporting Module / Controller Validation | Enforces required fields, DB not-null constraints | Zod Schema Validation (`createReportSchema`) | `report.controller.ts` | 400 Bad Request on invalid payloads | **Implemented** |
+| **FR-03** | Must | Reporting Module API Response | Deterministic unique reference generation | Node.js random UUID/Hex format (`CC-YYYYMMDD-XXXX`) | `report.service.ts` (`generateReference`) | On-screen confirmation banner | **Implemented** |
+| **FR-04** | Must | Reporting Module (`/api/v1/reports/:ref`) | Queries report status & history; enforces citizen scoping | Express router, indexed reference lookup in PostgreSQL | `report.service.ts` (`getByReference`), `StatusLookup.tsx` | Reference lookup view | **Implemented** |
+| **FR-05** | Must | Workflow Module (`/api/v1/reports/:ref/status`) | Atomic status update + append-only `StatusHistory` record | State Pattern (`report.status.ts`), `prisma.$transaction` | `report.status.ts`, `report.service.ts` (`updateStatus`) | Automated Vitest suite (`tests/reports.test.ts`) | **Implemented** |
+| **FR-06** | Should | Workflow Module (`/api/v1/reports`) | Indexed query on `status` and `category` | Express query parsing, React filter table | `report.controller.ts` (`list`), `StaffDashboard.tsx` | Staff table filtering | **Implemented** |
+| **FR-07** | Must | Auth Module (`/api/v1/auth/*`) | User credentials, active status | Bcrypt salted hash (cost 10), JWT session token | `auth.service.ts`, `AuthPage.tsx` | Login/Register API flow | **Implemented** |
+| **FR-08** | Must | Cross-cutting RBAC Middleware | Active user role inspection (`CITIZEN`, `PERSONNEL`, `ADMIN`) | Express Middleware (`requireRole`) | `src/middleware/auth.ts` | 403 Forbidden on unauthorized roles | **Implemented** |
+| **FR-09** | Should | Auth & Admin Module | User account activation/deactivation, dynamic role checks | Live DB re-query on every authenticated request | `auth.ts` (`authenticate`), `prisma/seed.ts` | Role change verified next request | **In Progress** |
+| **FR-10** | Could | External Integration Module | Notification dispatch queue / history | Deferred (External notification service) | None (Out of scope for M2) | Deferred | **Deferred** |
+| **NFR-01** | Must | Reporting Submission Path | Indexed database reference column | Single in-process modular monolith API (ASR-03) | Synchronous transactional write | Load test scheduled M3 | **Designed** |
+| **NFR-03** | Must | Auth Security Baseline | Passwords never stored in plaintext | Salted password hashing (Argon2id/Bcrypt), complexity check | `auth.controller.ts` (Regex: min 8, 1 upper, 1 digit) | Password complexity tests | **Implemented** |
+| **NFR-05** | Must | Input Validation Middleware | Rejects invalid payloads before persistence | Zod validation middleware at API boundary | `report.controller.ts`, `auth.controller.ts` | Zod rejection tests | **Implemented** |
