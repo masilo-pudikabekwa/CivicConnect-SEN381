@@ -1,0 +1,91 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main]      # check the PR before it merges
+  push:
+    branches: [main]      # re-check the combined state after merge
+
+permissions:
+  contents: read          # least privilege: CI never needs write access
+
+concurrency:              # cancel superseded runs on the same ref
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  quality-gate:           # <- this job name is what branch protection will require
+    name: quality-gate
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    services:
+      postgres:           # real DB, matches ADR-TECH-01 (PostgreSQL 18)
+        image: postgres:18
+        env:
+          POSTGRES_USER: civic
+          POSTGRES_PASSWORD: civic_ci      # throwaway: container dies with the job
+          POSTGRES_DB: civicconnect_ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U civic -d civicconnect_ci"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      NODE_ENV: test
+      DATABASE_URL: postgresql://civic:civic_ci@localhost:5432/civicconnect_ci?schema=public
+      AUTH_SECRET: ${{ secrets.CI_AUTH_SECRET }}   # protected secret, never hardcoded
+      FRONTEND_ORIGIN: http://localhost:5173
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Pre-flight - CI secret is configured
+        run: |
+          if [ -z "$AUTH_SECRET" ] || [ "${#AUTH_SECRET}" -lt 32 ]; then
+            echo "::error::Repository secret CI_AUTH_SECRET is missing or shorter than 32 characters"
+            exit 1
+          fi
+
+      - name: Gate - no .env file is tracked by git (R-007 / FE-06)
+        run: |
+          if git ls-files | grep -E '(^|/)\.env($|\.[^e])' ; then
+            echo "::error::A real .env file is committed. Rotate the secrets and remove it from history."
+            exit 1
+          fi
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install dependencies (lockfile-exact)
+        run: npm ci
+
+      - name: Generate Prisma client     # tests import @prisma/client enums
+        run: npm run db:generate
+
+      - name: Apply migrations to the CI database
+        working-directory: apps/api
+        run: npx prisma migrate deploy
+
+      - name: Gate - TypeScript static check (api)
+        run: npx tsc --noEmit -p apps/api
+
+      - name: Gate - build (api + web)
+        run: npm run build
+
+      - name: Gate - automated tests
+        run: npm test
+
+      - name: Gate - dependency audit (production deps, high/critical blocks)
+        run: npm audit --omit=dev --audit-level=high
+
+      - name: Warning - full dependency audit (moderate+, does not block)
+        run: npm audit --audit-level=moderate
+        continue-on-error: true            # visible warning, not a blocker
