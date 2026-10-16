@@ -40,6 +40,13 @@ export function errorHandler(err: unknown, _req: Request, res: Response, _next: 
       res.status(422).json({ error: { code: "INVALID_TRANSITION", message: err.message } });
       return;
     }
+
+    // Failed login (FR-07): generic message by design, matched exactly
+    if (err.message === "Invalid email or password") {
+      res.status(401).json({ error: { code: "UNAUTHORIZED", message: err.message } });
+      return;
+    }
+    
     // Access control or ownership check failed (FR-08)
     if (err.message.includes("Forbidden") || err.message.includes("Unauthorized")) {
       res.status(403).json({ error: { code: "FORBIDDEN", message: err.message } });
