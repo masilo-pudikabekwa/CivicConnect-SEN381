@@ -86,7 +86,8 @@ export class ReportService {
 
     // Resolves Stakeholder Conflict 2: Citizens may only view their own reports
     if (userRole === "CITIZEN" && report.citizenId !== userId) {
-      throw new Error("Forbidden: You cannot view reports submitted by other citizens");
+      // CR-006: respond as "not found" so other citizens' reference numbers are never confirmed
+      throw new Error(`Report with reference ${reference} not found`);
     }
 
     return report;
