@@ -83,7 +83,7 @@ jobs:
         run: npm run build
 
       - name: Gate - automated tests
-        run: npm test
+        run: npm run test -w apps/api -- --reporter=verbose
 
       # --omit=optional is deliberate: the lockfile marks the Prisma CLI chain as
       # devOptional (a build-time tool, not shipped). Its known deepmerge-ts advisory is
