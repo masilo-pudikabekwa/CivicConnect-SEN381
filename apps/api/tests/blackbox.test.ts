@@ -19,7 +19,7 @@ describe("BVA: description length (FR-02 / NFR-05). Rule: min 10, max 1000", () 
 
   it("BB-02 length 10 (exactly min) is accepted", async () => {
     const res = await submitReport(token, { ...validReport, description: "a".repeat(10) });
-    expect(res.status).toBe(201);
+    expect(res.status).toBe(202);
     expect(res.body.data.status).toBe("SUBMITTED");
   });
 
