@@ -53,8 +53,10 @@ jobs:
 
       - name: Gate - no .env file is tracked by git (R-007 / FE-06)
         run: |
-          if git ls-files | grep -E '(^|/)\.env($|\.[^e])' ; then
-            echo "::error::A real .env file is committed. Rotate the secrets and remove it from history."
+          # Any tracked .env or .env.* file fails, except *.example templates.
+          BAD=$(git ls-files | grep -E '(^|/)\.env(\.[^/]*)?$' | grep -v -E '\.example$' || true)
+          if [ -n "$BAD" ]; then
+            echo "::error::Tracked env file(s) found: $BAD. Rotate the secrets and remove from history."
             exit 1
           fi
 
