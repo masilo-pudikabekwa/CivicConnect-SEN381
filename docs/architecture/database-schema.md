@@ -112,7 +112,7 @@ WHERE h.id IS NULL;
 npx prisma migrate status   # expect: database schema is up to date
 ```
 
-Results: ⟨UPDATE: date, commit SHA, evidence file path⟩
+Results: these queries were not run separately for the final baseline. The evidence that the schema is applied correctly is CI: every `quality-gate` run applies the migration to an empty PostgreSQL 18 database with `prisma migrate deploy`, and E2E-02, INT-05 and INT-06 read `reports` and `status_history` directly. Running the queries above on staging is listed as future work.
 
 ## 6. Migration rules
 
