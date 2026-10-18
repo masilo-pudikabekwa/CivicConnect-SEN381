@@ -20,6 +20,14 @@ export function App() {
     }
   }, []);
 
+  // CR-005 / CR-011: only citizens submit reports; staff land on their dashboard instead.
+  // The API enforces this too (POST /reports is CITIZEN-only); hiding the tab just avoids
+  // offering an action that would always return 403.
+  const isCitizen = user?.role === "CITIZEN";
+  useEffect(() => {
+    if (user) setTab(user.role === "CITIZEN" ? "submit" : "staff");
+  }, [user]);
+
   const handleLogout = () => {
     localStorage.removeItem("token");
     setUser(null);
@@ -46,9 +54,11 @@ export function App() {
       ) : (
         <>
           <nav className="nav-tabs">
-            <button className={tab === "submit" ? "active" : ""} onClick={() => setTab("submit")}>
-              Report Issue
-            </button>
+            {isCitizen && (
+              <button className={tab === "submit" ? "active" : ""} onClick={() => setTab("submit")}>
+                Report Issue
+              </button>
+            )}
             <button className={tab === "track" ? "active" : ""} onClick={() => setTab("track")}>
               Track Status
             </button>
@@ -60,7 +70,7 @@ export function App() {
           </nav>
 
           <main style={{ marginTop: "20px" }}>
-            {tab === "submit" && <ReportForm />}
+            {tab === "submit" && isCitizen && <ReportForm />}
             {tab === "track" && <StatusLookup />}
             {tab === "staff" && <StaffDashboard />}
           </main>
