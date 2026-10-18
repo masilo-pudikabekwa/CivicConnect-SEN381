@@ -4,16 +4,30 @@
  *
  * Traceability:
  *   - FR-01: Creates new civic reports with category, description, and location
- *   - FR-03: Returns confirmation with a deterministic unique reference number
+ *   - FR-03: Returns confirmation with a unique reference number (retried on collision, TD-04)
  *   - FR-04: Retrieves report status scoped to the owning citizen (Stakeholder Conflict 2)
- *   - FR-05: Enforces transactional integrity during status updates
+ *   - FR-05: Enforces transactional integrity and optimistic concurrency during status updates (TD-05)
  *   - ASR-02 / Indicative Defense Q4: Business correctness protected via atomic transactions
  * ==============================================================================
  */
 
-import { ReportStatus } from "@prisma/client";
+import { Prisma, ReportStatus } from "@prisma/client";
 import { prisma } from "../../db/prisma.js";
+import { ConflictError } from "../../shared/errors.js";
 import { canTransition } from "./report.status.js";
+import { generateReference } from "./report.reference.js";
+
+// A clash is already very unlikely (TD-04); three attempts make a failed submission negligible
+const MAX_REFERENCE_ATTEMPTS = 3;
+
+/** True when a Prisma error is a unique-constraint violation on reports.reference. */
+function isReferenceCollision(err: unknown): boolean {
+  return (
+    err instanceof Prisma.PrismaClientKnownRequestError &&
+    err.code === "P2002" &&
+    String(err.meta?.target ?? "").includes("reference")
+  );
+}
 
 export interface CreateReportDTO {
   category: string;
@@ -24,21 +38,31 @@ export interface CreateReportDTO {
 
 export class ReportService {
   /**
-   * Generates a unique, human-readable tracking reference (FR-03).
-   * Format: CC-YYYYMMDD-XXXX
+   * Generates a tracking reference (FR-03). Kept as a method so tests can force a
+   * collision; the format lives in report.reference.ts (CR-013).
    */
-  private generateReference(): string {
-    const dateStr = new Date().toISOString().slice(0, 10).replace(/-/g, "");
-    const randomHex = Math.floor(1000 + Math.random() * 9000).toString();
-    return `CC-${dateStr}-${randomHex}`;
+  generateReference(): string {
+    return generateReference();
   }
 
   /**
    * Submits a report and initializes its audit log atomically (FR-01, FR-03).
    */
   async submitReport(data: CreateReportDTO) {
-    const reference = this.generateReference();
+    // TD-04: if the reference is already taken, the whole transaction rolls back
+    // and is retried with a new reference instead of returning HTTP 500
+    for (let attempt = 1; attempt <= MAX_REFERENCE_ATTEMPTS; attempt++) {
+      try {
+        return await this.insertReport(data, this.generateReference());
+      } catch (err) {
+        if (!isReferenceCollision(err) || attempt === MAX_REFERENCE_ATTEMPTS) throw err;
+      }
+    }
+    throw new Error("Could not allocate a unique report reference");
+  }
 
+  /** Inserts the report and its first audit row in one transaction (FR-01, FR-05). */
+  private insertReport(data: CreateReportDTO, reference: string) {
     // Use Prisma transaction to ensure the report and initial audit log commit together
     return prisma.$transaction(async (tx) => {
       const report = await tx.report.create({
@@ -122,10 +146,18 @@ export class ReportService {
         throw new Error(`Invalid status transition from ${current.status} to ${nextStatus}`);
       }
 
-      const updated = await tx.report.update({
-        where: { id: current.id },
+      // TD-05 / ADR-PERSISTENCE-01 rev 1: only write if the status is still the one we read.
+      // If another staff member changed it first, PostgreSQL re-checks this WHERE after
+      // their commit, 0 rows match, and this transaction rolls back with 409.
+      const { count } = await tx.report.updateMany({
+        where: { id: current.id, status: current.status },
         data: { status: nextStatus }
       });
+      if (count === 0) {
+        throw new ConflictError(
+          `Report ${reference} was changed by another user. Reload it and try again.`
+        );
+      }
 
       // Insert audit history record alongside status update
       await tx.statusHistory.create({
@@ -138,7 +170,7 @@ export class ReportService {
         }
       });
 
-      return updated;
+      return tx.report.findUniqueOrThrow({ where: { id: current.id } });
     });
   }
 }
