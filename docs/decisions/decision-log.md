@@ -8,13 +8,16 @@ Rule: Only genuine decisions already made are recorded as "Decided." Where evide
 |---|---|---|---|
 | ED-001 | Branch protection and PR review model for main branch | Decided | 2026-09-08 |
 | ED-002 | Technology stack selection | Closed / Replaced by ADR-TECH-01 | 2026-09-09 |
-| ED-003 | Detailed privacy/access-control model | Deferred to Milestone 2 | 2026-09-09 |
+| ED-003 | Detailed privacy/access-control model | Partially answered (CR-006); field-level classification remains future work | 2026-09-09 |
 | ADR-ARCH-01 | SPA + modular monolith API | Decided | 2026-09-30 |
-| ADR-TECH-01 | React/TypeScript + Node/Express + PostgreSQL | Decided | 2026-09-30 |
+| ADR-TECH-01 | React/TypeScript + Node/Express + PostgreSQL | Revised by ADR-TECH-01 rev 1 (CR-009) | 2026-09-30 |
 | ADR-DEPLOY-01 | Provider-neutral PaaS deployment direction | Decided | 2026-09-30 |
-| ADR-DESIGN-01 | Adopt Strategy and Observer Patterns | Decided | 2026-09-30 |
-| ADR-PERSISTENCE-01 | Application-layer Transactions and Optimistic Concurrency | Decided | 2026-09-30 |
-| ADR-INTEGRATION-01 | Asynchronous Dispatch for Notifications | Decided | 2026-09-30 |
+| ADR-DESIGN-01 | Adopt Strategy and Observer Patterns | Superseded by ADR-DESIGN-02 (CR-003, CR-010) | 2026-09-30 |
+| ADR-PERSISTENCE-01 | Application-layer Transactions and Optimistic Concurrency | Revised by ADR-PERSISTENCE-01 rev 1 (CR-010) | 2026-09-30 |
+| ADR-INTEGRATION-01 | Asynchronous Dispatch for Notifications | Decided, not implemented (FR-10 future work, TD-01) | 2026-09-30 |
+| ADR-TECH-01 rev 1 | Record locked dependency versions | Decided | 2026-10-16 |
+| ADR-DESIGN-02 | Table-driven State pattern; Repository deferred | Decided | 2026-10-16 |
+| ADR-PERSISTENCE-01 rev 1 | Transaction + enum + conditional update | Decided | 2026-10-16 |
 
 ## ED-001: Branch protection and PR review model for main branch
 | Field | Detail |
@@ -132,3 +135,45 @@ Rule: Only genuine decisions already made are recorded as "Decided." Where evide
 | Risks | Future dependency on a third-party notification channel (R-008). |
 | Evidence | A2 Task 3, and "not yet implemented" |
 | Later consequence | Informs notification-integration ADR and R-008. |
+
+## Revisions recorded in M3 (original decisions above are kept unchanged)
+
+## ADR-TECH-01 rev 1: Record locked dependency versions (CR-009)
+| Field | Detail |
+|---|---|
+| Original decision | TypeScript 6.0, Vite 8.x, Prisma 7.x, Argon2id password hashing. |
+| Problem | `package-lock.json` locks TypeScript 5.9.3, Vite 6.4.4 and Prisma 6.19.3; passwords are hashed with bcrypt (cost 10). The architecture matches ADR-TECH-01; the versions do not. |
+| Revised decision | Record the locked versions as the assessed baseline. Upgrade each major dependency in its own reviewed PR after the final release. |
+| Rationale | Upgrading during the release freeze would invalidate test and performance evidence and risk breaking changes (Prisma 7 changes datasource configuration). |
+| Consequence | Evidence stays valid for the assessed versions. NFR-03 is still met (salted hash). Upgrades and bcrypt-to-Argon2id rehashing are carried as TD-11. |
+
+## ADR-DESIGN-02: Table-driven State pattern; Repository deferred (supersedes ADR-DESIGN-01; CR-003, CR-010)
+| Field | Detail |
+|---|---|
+| Original decision | Strategy pattern per request category; Observer for status-change notifications (ADR-DESIGN-01). CR-003 then promised State + Repository. |
+| Problem | All six categories share the same validation and routing rules, so Strategy had nothing to vary. Observer's only consumer (FR-10 email) is deferred. The real variation in the system is the FR-05 lifecycle. |
+| Revised decision | `ALLOWED_TRANSITIONS` in `apps/api/src/modules/reports/report.status.ts` is the single source of truth for SUBMITTED → UNDER_REVIEW → IN_PROGRESS → RESOLVED, checked by `canTransition()`. A Repository layer is not introduced yet. |
+| Rationale | A transition table is the simplest form of the State pattern that meets FR-05: one object, no class per state. |
+| Consequence | Transition rules are unit-testable without a database (`tests/reports.test.ts`), and adding a state is a one-line change. Services remain coupled to Prisma (TD-07). |
+
+## ADR-PERSISTENCE-01 rev 1: Transaction + enum + conditional update (CR-010)
+| Field | Detail |
+|---|---|
+| Original decision | Application-layer transaction, a database CHECK constraint and optimistic concurrency. |
+| Problem | The transaction existed (`prisma.$transaction` in `report.service.ts`). There was no CHECK constraint, because a single-row CHECK cannot see the previous status, and no concurrency control: two simultaneous staff updates could both succeed and duplicate audit history (TD-05). |
+| Revised decision | Keep the transaction; use the `ReportStatus` enum as the database-level restriction on values; make the status write conditional (`WHERE reference = ? AND status = <current>`) and return HTTP 409 when 0 rows change. |
+| Rationale | Optimistic concurrency fits pilot-scale low contention (NFR-06) without row locks. |
+| Consequence | A second writer fails fast and must reload. Verified by INT-05 (`tests/integrity.test.ts`) ⟨UPDATE: CI run⟩; rollback verified by INT-06. |
+
+## Final status and observed consequences (final-project closure)
+
+| Decision | Final status | Consequence observed during construction and finalisation |
+|---|---|---|
+| ED-001 | In force | Two-approval PRs and the CI `quality-gate` gave every merge a reviewable record (e.g. PR #29, blocked run PR #35). ⟨CHECK with team: did review turnaround (R-013) delay any merge?⟩ |
+| ADR-ARCH-01 | Unchanged | One deployable API and one SPA kept integration and staging simple; module boundaries (auth, reports) held without cross-module calls. |
+| ADR-TECH-01 (+ rev 1) | Revised | PostgreSQL's unique and foreign-key constraints mean integrity faults fail loudly: a TD-04 reference collision hits the unique index instead of creating a silent duplicate. Version drift from the ADR had to be recorded rather than fixed. |
+| ADR-DEPLOY-01 | Unchanged | Provider-neutral configuration meant simulated staging needed only environment variables; the validator's missing `staging` mode (TD-17) was the one gap. |
+| ADR-DESIGN-02 | In force | The transition table made FR-05 the best-tested rule in the system; deferring Repository left services tied to Prisma (TD-07). |
+| ADR-PERSISTENCE-01 rev 1 | In force | The transaction guarantees no status change without an audit row; concurrency protection arrived late (M4), after inspection found TD-05. |
+| ADR-INTEGRATION-01 | Not implemented | Keeping email out of the request path protected NFR-01; FR-10 remains future work (TD-01). |
+| ED-003 | Partially answered | Owner-only 404 (CR-006) closed the reference-enumeration risk; field-level data classification and retention (POPIA) remain open and block real production use. |
