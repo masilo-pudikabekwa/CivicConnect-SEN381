@@ -81,7 +81,7 @@ Not yet indexed: `status_history(reportId)`, `status_history(changedById)`, `rep
 | Use case | Inside one transaction | Guarantee / known gap |
 |---|---|---|
 | Submit report (`reportService.submitReport`) | Insert report + insert first history row | Both commit or neither (FR-01, FR-05). A reference collision rolls the transaction back and is retried with a new reference (TD-04) |
-| Change status (`reportService.updateStatus`) | Read report → check transition (`canTransition`) → conditional status update → insert history row | No status change without an audit row; illegal transitions roll back and return 422 (ASR-02); a failed history insert rolls back the status change (INT-06). If another writer changed the status first, 0 rows update and the API returns 409 (TD-05, INT-05) |
+| Change status (`reportService.updateStatus`) | Read report → check transition (`canTransition`) → conditional status update → insert history row | No status change without an audit row; illegal transitions roll back and return 422 (ASR-02); a failed history insert rolls back the status change (INT-06). If another writer changed the status first, 0 rows update and the API returns 409 (TD-05, INT-05, INT-09) |
 | Register (`authService.register`) | Not a transaction (read, then insert) | The unique email index prevents duplicates; a race returns 500 (TD-06) |
 | Authenticate (`middleware/auth.ts`) | Single read of `role` and `isActive` per request | Role changes and deactivation take effect on the next request (FR-09) |
 

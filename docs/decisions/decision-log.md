@@ -163,7 +163,7 @@ Rule: Only genuine decisions already made are recorded as "Decided." Where evide
 | Problem | The transaction existed (`prisma.$transaction` in `report.service.ts`). There was no CHECK constraint, because a single-row CHECK cannot see the previous status, and no concurrency control: two simultaneous staff updates could both succeed and duplicate audit history (TD-05). |
 | Revised decision | Keep the transaction; use the `ReportStatus` enum as the database-level restriction on values; make the status write conditional (`WHERE reference = ? AND status = <current>`) and return HTTP 409 when 0 rows change. |
 | Rationale | Optimistic concurrency fits pilot-scale low contention (NFR-06) without row locks. |
-| Consequence | A second writer fails fast and must reload. Verified by INT-05 (`tests/integrity.test.ts`) ⟨UPDATE: CI run⟩; rollback verified by INT-06. |
+| Consequence | A second writer fails fast and must reload. Verified by INT-09 (deterministic: the API loses the conditional update and returns 409) and INT-05 (race invariant) in `tests/integrity.test.ts` ⟨UPDATE: CI run⟩; rollback verified by INT-06. |
 
 ## Final status and observed consequences (final-project closure)
 
