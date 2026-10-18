@@ -2,6 +2,7 @@ import { describe, it, expect, afterAll } from "vitest";
 import request from "supertest";
 import { ReportStatus } from "@prisma/client";
 import { app, prisma, PASSWORD, uniqueEmail, validReport, bearer, loginAs, citizenToken, staffToken, submitReport } from "./helpers/testkit.js";
+import { REFERENCE_PATTERN } from "../src/modules/reports/report.reference.js";
 
 afterAll(() => prisma.$disconnect());
 
@@ -25,10 +26,10 @@ describe("E2E-01 Citizen journey: register -> login -> submit -> track", () => {
     expect(me.status).toBe(200);
     expect(me.body.data.email).toBe(email);
 
-    // 4. Submit (FR-01, FR-03). Reference format CC-YYYYMMDD-NNNN
+    // 4. Submit (FR-01, FR-03). Reference format CC-YYYYMMDD-XXXXXX (CR-013)
     const created = await submitReport(token, validReport);
     expect(created.status).toBe(201);
-    expect(created.body.data.reference).toMatch(/^CC-\d{8}-\d{4}$/);
+    expect(created.body.data.reference).toMatch(REFERENCE_PATTERN);
     expect(created.body.data.status).toBe("SUBMITTED");
 
     // 5. Track (FR-04)

@@ -47,7 +47,7 @@ export function StatusLookup() {
         <input
           type="text"
           required
-          placeholder="e.g. CC-20261006-1234"
+          placeholder="e.g. CC-20261006-K7M2QX"
           value={refInput}
           onChange={(e) => setRefInput(e.target.value)}
         />
