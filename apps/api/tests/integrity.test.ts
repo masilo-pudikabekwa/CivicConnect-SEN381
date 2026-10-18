@@ -12,6 +12,7 @@
  *   - INT-06: ASR-02 status change rolls back if the audit insert fails
  *   - INT-07: FR-09 deactivation takes effect on the next request
  *   - INT-08: FR-03 / TD-04 reference collision is retried, not returned as 500
+ *   - INT-09: FR-05 / TD-05 deterministic 409 when another writer commits first
  * ==============================================================================
  */
 
@@ -160,4 +161,62 @@ describe("INT-08 reference collision is retried (FR-03, TD-04)", () => {
     expect(res.body.data.reference).toMatch(REFERENCE_PATTERN);
     expect(attempts).toBe(2); // first attempt collided, second succeeded
   });
+});
+
+describe("INT-09 deterministic conflict: another writer commits first (FR-05, TD-05)", () => {
+  it("returns 409 and writes no history when the status changed after it was read", async () => {
+    const citizen = await citizenToken();
+    const staff = await staffToken();
+    const reference = (await submitReport(citizen.token, validReport)).body.data.reference as string;
+    expect((await patchStatus(staff.token, reference, ReportStatus.UNDER_REVIEW)).status).toBe(200);
+    const report = await prisma.report.findUniqueOrThrow({ where: { reference } });
+
+    // Choreography (no timing luck involved):
+    // 1. Our own transaction moves the report to IN_PROGRESS and holds the row lock, uncommitted.
+    // 2. The API request reads the last committed status (UNDER_REVIEW), passes the transition
+    //    check, and then blocks on our lock inside its conditional UPDATE.
+    // 3. We wait until PostgreSQL reports that request as waiting on a lock, then commit.
+    // 4. PostgreSQL re-checks the API's WHERE status = 'UNDER_REVIEW' against the committed row,
+    //    0 rows match, and the API must answer 409 without writing a history row.
+    let secondWriter: Promise<Awaited<ReturnType<typeof patchStatus>>> | undefined;
+    await prisma.$transaction(
+      async (tx) => {
+        await tx.report.update({ where: { id: report.id }, data: { status: ReportStatus.IN_PROGRESS } });
+        await tx.statusHistory.create({
+          data: {
+            reportId: report.id,
+            fromStatus: ReportStatus.UNDER_REVIEW,
+            toStatus: ReportStatus.IN_PROGRESS,
+            changedById: staff.userId,
+            comment: "INT-09 first writer",
+          },
+        });
+
+        // .then() sends the HTTP request now; its result is awaited after we commit
+        secondWriter = patchStatus(staff.token, reference, ReportStatus.IN_PROGRESS, "INT-09 second writer").then((r) => r);
+
+        const deadline = Date.now() + 8000;
+        for (;;) {
+          const rows = await prisma.$queryRaw<{ waiting: bigint }[]>`
+            SELECT count(*) AS waiting FROM pg_stat_activity
+            WHERE wait_event_type = 'Lock' AND query ILIKE '%UPDATE%reports%' AND pid <> pg_backend_pid()`;
+          if (Number(rows[0].waiting) > 0) break;
+          if (Date.now() > deadline) throw new Error("INT-09 setup: the API request never blocked on the row lock");
+          await new Promise((resolve) => setTimeout(resolve, 50));
+        }
+      },
+      { timeout: 15000 }
+    );
+
+    const res = await secondWriter!;
+    expect(res.status).toBe(409);
+    expect(res.body.error.code).toBe("CONFLICT");
+
+    const after = await prisma.report.findUniqueOrThrow({ where: { reference } });
+    expect(after.status).toBe(ReportStatus.IN_PROGRESS);
+    const secondWriterRows = await prisma.statusHistory.count({
+      where: { reportId: report.id, comment: "INT-09 second writer" },
+    });
+    expect(secondWriterRows).toBe(0);
+  }, 20000); // allows for the lock wait; normally finishes in well under a second
 });
