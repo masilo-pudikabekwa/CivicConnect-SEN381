@@ -15,6 +15,7 @@
 
 import { Request, Response, NextFunction } from "express";
 import { ZodError } from "zod";
+import { ConflictError } from "../shared/errors.js";
 
 export function errorHandler(err: unknown, _req: Request, res: Response, _next: NextFunction) {
   // Handle request validation errors from Zod schemas (NFR-05)
@@ -26,6 +27,12 @@ export function errorHandler(err: unknown, _req: Request, res: Response, _next: 
         details: err.issues.map((i) => ({ field: i.path.join("."), message: i.message }))
       }
     });
+    return;
+  }
+
+  // Typed domain errors (TD-06): matched by class, not by message text
+  if (err instanceof ConflictError) {
+    res.status(409).json({ error: { code: "CONFLICT", message: err.message } });
     return;
   }
 
