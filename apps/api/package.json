@@ -10,7 +10,8 @@
     "test": "vitest run",
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev --name init_m2_baseline",
-    "db:seed": "tsx prisma/seed.ts"
+    "db:seed": "tsx prisma/seed.ts",
+    "seed:volume": "tsx prisma/seed-volume.ts"
   },
   "dependencies": {
     "@prisma/client": "^6.4.0",
