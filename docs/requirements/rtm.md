@@ -1,5 +1,16 @@
 # Requirements Traceability Matrix (RTM) — M3 Baseline and M4 Finalisation Working Copy
-> Evolved from M1/M2 baselines to trace architecture, implementation, automated verification, CI execution evidence, and final defect/limitation status. A row is not **Verified** until its named final-SHA evidence exists; M4 closes this existing controlled file rather than creating a replacement.
+> Evolved from M1/M2 baselines to trace architecture, implementation, automated verification, CI execution evidence, and final defect/limitation status. The PED v4.0 baseline is `4e7e4cb31d1d8a1c97a7e8e50b18fa90f13a3d6a` (`v4.0.0`), with CI quality-gate Run #27 at `https://github.com/masilo-pudikabekwa/CivicConnect-SEN381/actions/runs/39166111212/job/117789326261` (35/35 Vitest executions). A row remains unverified where its named final-SHA evidence is still a placeholder.
+
+## PED v4.0 evidence placeholders still to close
+
+| Requirement / area | Required controlled evidence | Current status |
+|---|---|---|
+| NFR-01 | `[two final-SHA Autocannon outputs: 50 concurrent connections for 15 seconds]` | Not measured |
+| NFR-02 | `[completed five-participant usability record and anonymised observations]` | Not measured |
+| NFR-04 | `[declared uptime-window log and environment evidence]` | Not measured |
+| NFR-06 | `[final-SHA empty-versus-100-user/500-report comparison files]` | Not measured |
+| INTG-01 to INTG-12 | `[final-SHA staging smoke screenshots and network traces]` | Pending |
+| Rollback | `[completed rollback rehearsal record]` | Pending |
 
 | Req ID | Pri | Architecture / Component | Implementation Component | Verification Technique & Test Case | Test Input / Condition | Expected Result | CI Execution Evidence | Defect / Status (M3) |
 |---|---|---|---|---|---|---|---|---|

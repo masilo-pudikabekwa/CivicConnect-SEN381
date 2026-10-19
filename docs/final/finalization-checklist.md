@@ -4,6 +4,20 @@
 
 The combined finalisation branch is currently at `61ddfe1` after Dristen's two M4 branches were merged. Local verification passed 35/35 Vitest tests and the API/web production builds, but this is not a final CI run or release baseline. Do **not** create the final tag yet: staging, load, volume and usability must be recorded against the final candidate.
 
+## PED v4.0 reconciliation placeholders
+
+PED v4.0 identifies the frozen assessed baseline as `4e7e4cb31d1d8a1c97a7e8e50b18fa90f13a3d6a` (`v4.0.0`, 18 October 2026) and records a passing CI quality-gate Run #27: `https://github.com/masilo-pudikabekwa/CivicConnect-SEN381/actions/runs/39166111212/job/117789326261` (35/35 Vitest executions). Retain the following as incomplete until controlled final-SHA evidence is attached:
+
+- `[INTG-01 to INTG-12 staging smoke screenshots/network traces]`
+- `[rollback rehearsal record]`
+- `[two NFR-01 50-concurrent-user, 15-second load-run outputs]`
+- `[NFR-06 empty-versus-100-user/500-report comparison]`
+- `[NFR-02 five-participant usability record]`
+- `[NFR-04 declared uptime-window log]`
+- `[two reviewer approvals and verified v4.0.0 tag URL]`
+
+The PED records an interim `NO-GO / HOLD pending evidence` decision; it does not establish that the outstanding NFRs failed.
+
 ## Do these repository tasks before editing PED v4.0
 
 1. **Freeze a candidate after the merged fixes are reviewed.** TD-04, TD-05 and CR-011 are now merged locally; record the resulting full SHA in `docs/final/release-baseline-record.md` after no further code changes are needed.

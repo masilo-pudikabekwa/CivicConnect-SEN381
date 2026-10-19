@@ -1,5 +1,7 @@
 # NFR-02 Usability Test Record
 
+**PED v4.0 status:** Not yet measured. Keep the participant rows and calculations as placeholders until at least five first-time users complete the declared task on the final SHA/tag. Do not convert this template into evidence without the actual anonymised observations.
+
 ## Protocol
 
 - Objective: verify the stated NFR-02 acceptance criterion with first-time users.
@@ -8,7 +10,7 @@
 - Step limit: `<= 5` `[state how steps are counted]`
 - Required sample: `>= 5` first-time participants.
 - Target completion rate: `>= 80%`.
-- Test version: `[full final SHA / tag]`
+- Test version: `4e7e4cb31d1d8a1c97a7e8e50b18fa90f13a3d6a / v4.0.0 [confirm the test used this exact build]`
 - Date and environment: `[date, browser/device, local/staging URL]`
 - Facilitator: `Masilo Pudikabekwa`
 - Privacy: record anonymous codes only; do not store passwords, personal data or screenshots containing participant details.
