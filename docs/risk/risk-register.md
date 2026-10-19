@@ -63,6 +63,19 @@ This is the only critical entry because it is one the one risk that impacts 3 se
 | **R-015** | Architectural boundary erosion inside the modular monolith. | Low | Medium | Low | **Controlled** | Modular service encapsulation preserved; routes delegate strictly to module services (`auth`, `reports`). | Code reviews block cross-module direct table access. | Phenyo Phooko |
 | **R-016** | PostgreSQL database becomes a critical Single Point of Failure (SPOF). | Medium | High | High | **Open (M3 Residual)** | Automated backup configuration and health-check monitoring documented; atomic transactions (`prisma.$transaction`) ensure consistency. | Retain as deliberate technical debt (TD-02); plan multi-AZ standby for production. | Phenyo Phooko |
 | **R-017** | Dependency drift and audit blocking failures. | Low | Medium | Low | **Closed** | Pinned lockfile (`package-lock.json`); isolated runtime audit (`--omit=dev --omit=optional`) from Prisma CLI advisories (`deepmerge-ts`). | Upgrade dependencies via dedicated single-package PRs in M4 (TD-11). | Masilo Pudikabekwa |
-| **R-018** | **Production-scale municipal concurrency limitations (New M3 Residual)** | High | Medium | High | **Open (M3 Residual)** | Autocannon benchmark verified 50 concurrent connections locally ($p95 < 100\text{ms}$); system classified as **CONDITIONALLY READY** rather than unconditionally production ready. | Re-evaluate connection pooling, read replicas, and horizontal scaling in M4 before municipal pilot. | Masilo Pudikabekwa |
-| **R-019** | **Staging environment infrastructure parity (New M3 Residual)** | Medium | Medium | Medium | **Open (M3 Residual)** | Staging runs compiled production assets (`dist/`) on port 3001 with isolated database, but runs on local host rather than multi-zone cloud PaaS. | Deploy to cloud PaaS (Render/Railway) in M4. | Phenyo Phooko |
+| **R-018** | **Production-scale municipal concurrency limitations (New M3 Residual)** | High | Medium | High | **Open - measurement pending** | The 50-concurrent-user load measurement has not yet been captured in controlled evidence, so no p95 claim is accepted. | Run two NFR-01 measurements after final fixes; reassess connection pooling/read replicas only from observed results. | Masilo Pudikabekwa |
+| **R-019** | **Staging environment infrastructure parity (New M3 Residual)** | Medium | Medium | Medium | **Open - staging evidence pending** | A staging configuration may be planned, but a controlled final-SHA deployment, smoke run and rollback record are not yet linked. | Complete a separated staging/simulated-production run and rollback rehearsal, then make an evidence-based go/no-go decision. | Phenyo Phooko |
 | **R-020** | **Absence of active email notification push (New M3 Residual)** | Medium | Low | Low | **Open (M3 Residual)** | FR-10 formally deferred; citizens poll reference numbers on demand via fast query endpoint ($< 100\text{ms}$). | Implement asynchronous worker queue and SMTP integration in M4 (TD-01). | Dristen Venter |
+
+---
+
+## Milestone 4 Finalisation Placeholders from PED v4.0
+
+PED v4.0 records that the construction and governance risks are closed or controlled, while the following risks remain explicit inputs to the evidence-based go/no-go decision. These placeholders must be replaced only with final-SHA evidence.
+
+| Risk ID | Finalisation state | Evidence placeholder / required action |
+|---|---|---|
+| R-016 | Residual: database SPOF and no restore rehearsal | `[rollback rehearsal result and release decision]` |
+| R-018 | Residual: municipal-scale concurrency measurement pending | `[two NFR-01 load-test outputs and p95/error interpretation]` |
+| R-019 | Residual: staging parity and smoke evidence pending | `[staging deployment identity, INTG-01 to INTG-12 traces, and rollback record]` |
+| R-020 | Residual: FR-10 email notification remains deferred | `[approved future-work confirmation / TD-01 reference]` |
